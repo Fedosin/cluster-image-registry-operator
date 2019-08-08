@@ -362,16 +362,28 @@ func (d *driver) CreateStorage(cr *imageregistryv1.Config) error {
 			generatedName = true
 		}
 
-		if err = d.containerExists(client, cr.Spec.Storage.Swift.Container); err != nil {
-			if _, ok := err.(*gophercloud.ErrResourceNotFound); ok {
-				if !generatedName {
-					util.UpdateCondition(cr, imageregistryv1.StorageExists, operatorapi.ConditionFalse, "Unable to access container", "The user provided container does not exist")
-					break
-				}
-			} else {
-				cr.Spec.Storage.Swift.Container = ""
-				continue
+		err = d.containerExists(client, cr.Spec.Storage.Swift.Container)
+		if err != nil {
+			// If the error is not ErrResourceNotFound
+			// return the error
+			if _, ok := err.(*gophercloud.ErrResourceNotFound); !ok {
+				util.UpdateCondition(cr, imageregistryv1.StorageExists, operatorapi.ConditionFalse, "Unable to check if container exists", fmt.Sprintf("Error occurred checking if container exists: %v", err))
+				return err
 			}
+			// If the error is ErrResourceNotFound
+			// fall through to the container creation
+		}
+		// If we were supplied a container name and it exists
+		// we can skip the create
+		if !generatedName && err == nil {
+			util.UpdateCondition(cr, imageregistryv1.StorageExists, operatorapi.ConditionTrue, "Container exists", "User supplied container already exists")
+			break
+		}
+		// If we generated a container name and it exists
+		// let's try again
+		if generatedName && err == nil {
+			cr.Spec.Storage.Swift.Container = ""
+			continue
 		}
 
 		createOps := containers.CreateOpts{

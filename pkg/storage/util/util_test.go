@@ -41,6 +41,7 @@ func (m MockInfrastructureLister) List(selector labels.Selector) ([]*configv1.In
 func TestGenerateStorageName(t *testing.T) {
 	l := regopclient.Listers{Infrastructures: MockInfrastructureLister{}}
 	tests := [][]string{
+		nil,
 		// test with no additionals
 		{},
 		// test one additional

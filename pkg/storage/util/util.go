@@ -128,9 +128,10 @@ func GenerateStorageName(listers *regopclient.Listers, additionalInfo ...string)
 	// Additional information provided to the function third
 	parts = append(parts, additionalInfo...)
 
-	// Join the slice together with dashes and check the length
+	// Join the slice together with dashes
 	name := strings.Join(parts, "-")
 
+	// Check the length and pad or truncate as needed
 	switch {
 	case len(name) < 62:
 		padding := 62 - len(name) - 1
@@ -140,7 +141,11 @@ func GenerateStorageName(listers *regopclient.Listers, additionalInfo ...string)
 		}
 		return fmt.Sprintf("%s-%s", name, string(bytes)), nil
 	case len(name) > 62:
-		return name[0:62], nil
+		name = name[0:62]
+		if strings.HasSuffix(name, "-") {
+			name = name[0:61] + string(byte(97+rand.Intn(25)))
+		}
+		return name, nil
 	default:
 		return name, nil
 	}
