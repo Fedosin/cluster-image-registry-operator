@@ -11,6 +11,10 @@ const (
 	// PVCImageRegistryName is the default name of the claim provisioned for PVC backend
 	PVCImageRegistryName = "image-registry-storage"
 
+	// ImageRegistryCABundleName is the default name for additional ca trust bundle in
+	// "openshift-config" namespace
+	ImageRegistryCABundleName = "image-registry-ca-bundle"
+
 	// ImageRegistryResourceName is the name of the image registry config instance
 	ImageRegistryResourceName = "cluster"
 

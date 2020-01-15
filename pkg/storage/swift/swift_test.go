@@ -18,6 +18,7 @@ import (
 	imageregistryv1 "github.com/openshift/api/imageregistry/v1"
 	operatorapi "github.com/openshift/api/operator/v1"
 	configlisters "github.com/openshift/client-go/config/listers/config/v1"
+	"github.com/openshift/cluster-image-registry-operator/defaults"
 	regopclient "github.com/openshift/cluster-image-registry-operator/pkg/client"
 )
 
@@ -41,7 +42,8 @@ var (
 		"REGISTRY_STORAGE_SWIFT_USERNAME": []byte(username),
 		"REGISTRY_STORAGE_SWIFT_PASSWORD": []byte(password),
 	}
-	fakeCloudsYAML map[string][]byte
+	fakeCloudsYAML             map[string][]byte
+	fakeCloudProviderConfigMap map[string]string
 )
 
 type MockSecretNamespaceLister interface {
@@ -96,6 +98,32 @@ func (m MockIPISecretNamespaceLister) List(selector labels.Selector) ([]*corev1.
 	return []*corev1.Secret{
 		{
 			Data: fakeCloudsYAML,
+		},
+	}, nil
+}
+
+type MockConfigMapNamespaceLister struct{}
+
+func (m MockConfigMapNamespaceLister) Get(name string) (*corev1.ConfigMap, error) {
+	if name == defaults.ImageRegistryCABundleName {
+		return &corev1.ConfigMap{
+			Data: fakeCloudProviderConfigMap,
+		}, nil
+	}
+
+	return nil, &k8serrors.StatusError{metav1.Status{
+		Status:  metav1.StatusFailure,
+		Code:    http.StatusNotFound,
+		Reason:  metav1.StatusReasonNotFound,
+		Details: &metav1.StatusDetails{},
+		Message: fmt.Sprintf("No config map with name %v was found", name),
+	}}
+}
+
+func (m MockConfigMapNamespaceLister) List(selector labels.Selector) ([]*corev1.ConfigMap, error) {
+	return []*corev1.ConfigMap{
+		{
+			Data: fakeCloudProviderConfigMap,
 		},
 	}, nil
 }
@@ -184,6 +212,7 @@ func mockConfig(includeStatus bool, endpoint string, secretLister MockSecretName
 		Listers: &regopclient.Listers{
 			Secrets:         secretLister,
 			Infrastructures: fakeInfrastructureLister(cloudName),
+			OpenShiftConfig: MockConfigMapNamespaceLister{},
 		},
 		Config: &config,
 	}
@@ -306,6 +335,7 @@ func TestSwiftSecrets(t *testing.T) {
 		Listers: &regopclient.Listers{
 			Secrets:         MockUPISecretNamespaceLister{},
 			Infrastructures: fakeInfrastructureLister(cloudName),
+			OpenShiftConfig: MockConfigMapNamespaceLister{},
 		},
 		Config: &config,
 	}
@@ -326,6 +356,7 @@ func TestSwiftSecrets(t *testing.T) {
 		Listers: &regopclient.Listers{
 			Secrets:         MockIPISecretNamespaceLister{},
 			Infrastructures: fakeInfrastructureLister(customCloud),
+			OpenShiftConfig: MockConfigMapNamespaceLister{},
 		},
 		Config: &config,
 	}
