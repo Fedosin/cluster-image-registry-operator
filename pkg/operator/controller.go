@@ -84,7 +84,7 @@ func NewController(kubeconfig *restclient.Config) (*Controller, error) {
 	p.Healthz.TimeoutSeconds = 5
 
 	p.Service.Name = defaults.ImageRegistryName
-	p.ImageConfig.Name = "cluster"
+	p.ImageConfig.Name = defaults.ImageConfigName
 	p.CAConfig.Name = defaults.ImageRegistryCertificatesName
 	p.ServiceCA.Name = "serviceca"
 	p.TrustedCA.Name = "trusted-ca"

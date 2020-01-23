@@ -15,6 +15,9 @@ const (
 	// "openshift-config" namespace
 	ImageRegistryCABundleName = "image-registry-ca-bundle"
 
+	// ImageConfigName is the default config name for images
+	ImageConfigName = "cluster"
+
 	// ImageRegistryResourceName is the name of the image registry config instance
 	ImageRegistryResourceName = "cluster"
 

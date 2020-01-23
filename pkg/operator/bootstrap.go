@@ -90,6 +90,21 @@ func (c *Controller) Bootstrap() error {
 			}
 
 			rolloutStrategy = appsapi.RecreateDeploymentStrategyType
+		} else {
+			// We need to make sure that we use custom ca cert for Swift
+			imageConfig, err := c.listers.ImageConfigs.Get(defaults.ImageConfigName)
+			if errors.IsNotFound(err) {
+				klog.Infof("missing the image config: %s", err)
+			} else if err != nil {
+				return err
+			}
+
+			imageConfig.Spec.AdditionalTrustedCA.Name = defaults.ImageRegistryCABundleName
+
+			_, err = c.clients.Config.Images().Update(imageConfig)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
